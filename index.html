@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Handyswap — Executive Financial Dashboard</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="handyswap favicon.png">
+
+  <!-- Google Fonts & Chart.js -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #090D16;
+      --card-bg: #111827;
+      --card-border: #1F2937;
+      --accent-blue: #3B82F6;
+      --accent-cyan: #38BDF8;
+      --text-main: #F9FAFB;
+      --text-muted: #9CA3AF;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+    }
+
+    * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 0; }
+    body { background-color: var(--bg-dark); color: var(--text-main); padding: 24px; }
+    
+    /* Top Navigation / Header */
+    .header {
+      background: var(--card-bg);
+      padding: 18px 28px;
+      border-radius: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--card-border);
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .brand-box { display: flex; align-items: center; gap: 16px; }
+    .brand-logo { height: 38px; object-fit: contain; }
+    .brand-title { font-size: 20px; font-weight: 700; color: #FFFFFF; letter-spacing: -0.5px; }
+    .brand-subtitle { font-size: 12px; color: var(--accent-cyan); display: block; margin-top: 2px; }
+    
+    .btn-sync {
+      background: linear-gradient(135deg, var(--accent-blue), #2563EB);
+      color: #FFFFFF;
+      border: none;
+      padding: 11px 22px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    .btn-sync:hover { transform: translateY(-1px); opacity: 0.95; }
+
+    /* Interactive Filters Bar */
+    .filter-panel {
+      background: var(--card-bg);
+      padding: 20px 24px;
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 170px; }
+    .filter-group label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .filter-group select, .filter-group input {
+      padding: 11px 14px;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      background: #1F2937;
+      color: var(--text-main);
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+      transition: border 0.2s;
+    }
+    .filter-group select:focus, .filter-group input:focus { border-color: var(--accent-blue); }
+
+    /* Reset Filters Button */
+    .btn-reset {
+      align-self: flex-end;
+      padding: 11px 16px;
+      background: #1F2937;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-reset:hover { background: #374151; color: #FFFFFF; }
+
+    /* KPI Cards Zone */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: var(--accent-blue);
+    }
+    .card.green::before { background: var(--success); }
+    .card.orange::before { background: var(--warning); }
+    .card.red::before { background: var(--danger); }
+    
+    .card h3 { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 700; letter-spacing: 0.5px; }
+    .card p { font-size: 22px; font-weight: 700; color: #FFFFFF; }
+
+    /* Charts Section */
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px; margin-bottom: 24px; }
+    .chart-card {
+      background: var(--card-bg);
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+    }
+    .chart-card h2 { font-size: 15px; margin-bottom: 18px; color: #FFFFFF; font-weight: 700; }
+
+    /* Table Section */
+    .table-card {
+      background: var(--card-bg);
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+      overflow-x: auto;
+    }
+    .table-card h2 { font-size: 15px; margin-bottom: 18px; color: #FFFFFF; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--card-border); }
+    th { background: #1F2937; color: var(--accent-cyan); font-weight: 600; text-transform: uppercase; font-size: 11px; }
+    td { color: #D1D5DB; }
+    tr:hover { background-color: #1F2937; }
+
+    .badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      display: inline-block;
+    }
+    .badge-cancelled { background: rgba(239, 68, 68, 0.2); color: #FCA5A5; }
+    .badge-discount { background: rgba(59, 130, 246, 0.2); color: #93C5FD; }
+    .badge-completed { background: rgba(16, 185, 129, 0.2); color: #6EE7B7; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="brand-box">
+      <img src="Handyswap logo.png" alt="Handyswap" class="brand-logo" onerror="this.style.display='none'">
+      <div>
+        <span class="brand-title">HANDYSWAP</span>
+        <span class="brand-subtitle">Financial & Ledger Live Dashboard</span>
+      </div>
+    </div>
+    <button class="btn-sync" onclick="loadDashboardData()">🔄 Sync Ledger Data</button>
+  </div>
+
+  <!-- DYNAMIC FILTERS WITH DATE FILTER -->
+  <div class="filter-panel">
+    <div class="filter-group">
+      <label>Start Date</label>
+      <input type="date" id="startDateFilter" onchange="applyFilters()">
+    </div>
+    <div class="filter-group">
+      <label>End Date</label>
+      <input type="date" id="endDateFilter" onchange="applyFilters()">
+    </div>
+    <div class="filter-group">
+      <label>Order Status</label>
+      <select id="statusFilter" onchange="applyFilters()">
+        <option value="ALL">All Statuses</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Payment Method</label>
+      <select id="gatewayFilter" onchange="applyFilters()">
+        <option value="ALL">All Gateways</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Country (SHIP CN)</label>
+      <select id="countryFilter" onchange="applyFilters()">
+        <option value="ALL">All Countries</option>
+      </select>
+    </div>
+    <button class="btn-reset" onclick="resetFilters()">Reset Filters</button>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="card"><p id="grossSales">€0.00</p><h3>Gross Sales</h3></div>
+    <div class="card green"><p id="netRevenue">€0.00</p><h3>Net Revenue</h3></div>
+    <div class="card orange"><p id="totalCogs">€0.00</p><h3>Total COGS</h3></div>
+    <div class="card green"><p id="grossProfit">€0.00</p><h3>Gross Profit</h3></div>
+    <div class="card red"><p id="discounts">€0.00</p><h3>Discounts Total</h3></div>
+    <div class="card red"><p id="cancelled">0</p><h3>Cancelled Orders</h3></div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h2>💳 Net Sales by Payment Gateway</h2>
+      <canvas id="gatewayChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <h2>🌍 Sales Volume by Country (SHIP CN)</h2>
+      <canvas id="countryChart"></canvas>
+    </div>
+  </div>
+
+  <!-- DETAILED LEDGER TABLE -->
+  <div class="table-card">
+    <h2>📋 Live Ledger Entries</h2>
+    <table id="ledgerTable">
+      <thead>
+        <tr>
+          <th>Order #</th>
+          <th>Order Date</th>
+          <th>Gateway</th>
+          <th>Country</th>
+          <th>Status</th>
+          <th>Buying Cost</th>
+          <th>Net Price</th>
+        </tr>
+      </thead>
+      <tbody><!-- Dynamic Rows --></tbody>
+    </table>
+  </div>
+
+  <script>
+    // ⚠️ Apni Google Sheet ka Publish to Web CSV Link yahan paste karein:
+    const GSHEETS_CSV_URL = "YOUR_PUBLISHED_GOOGLE_SHEET_CSV_URL_HERE";
+
+    let rawData = [];
+    let gatewayChartInstance = null;
+    let countryChartInstance = null;
+
+    function cleanNum(val) {
+      if (!val) return 0;
+      let clean = val.toString().replace(/€/g, '').replace(/,/g, '').trim();
+      return parseFloat(clean) || 0;
+    }
+
+    function parseOrderDate(dateStr) {
+      if (!dateStr) return null;
+      let parts = dateStr.trim().split('/');
+      if (parts.length === 3) {
+        let month = parseInt(parts[0], 10) - 1;
+        let day = parseInt(parts[1], 10);
+        let year = parseInt(parts[2], 10);
+        return new Date(year, month, day);
+      }
+      let d = new Date(dateStr);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function loadDashboardData() {
+      Papa.parse(GSHEETS_CSV_URL, {
+        download: true,
+        header: true,
+        complete: function(results) {
+          rawData = results.data.filter(r => (r["Order #"] || r["Order # "] || "").trim() !== "");
+          populateDropdowns(rawData);
+          applyFilters();
+        }
+      });
+    }
+
+    function populateDropdowns(data) {
+      const statuses = new Set(), gateways = new Set(), countries = new Set();
+
+      data.forEach(r => {
+        let st = (r["Status"] || "").trim();
+        let gw = (r["Payment Method"] || "").trim();
+        let cn = (r["SHIP CN"] || "").trim();
+
+        if (st) statuses.add(st);
+        if (gw) gateways.add(gw);
+        if (cn) countries.add(cn);
+      });
+
+      fillSelect("statusFilter", Array.from(statuses).sort());
+      fillSelect("gatewayFilter", Array.from(gateways).sort());
+      fillSelect("countryFilter", Array.from(countries).sort());
+    }
+
+    function fillSelect(id, valuesArray) {
+      const select = document.getElementById(id);
+      const currentVal = select.value;
+      select.innerHTML = `<option value="ALL">All Options</option>`;
+      valuesArray.forEach(val => {
+        select.innerHTML += `<option value="${val}">${val}</option>`;
+      });
+      if (valuesArray.includes(currentVal)) select.value = currentVal;
+    }
+
+    function applyFilters() {
+      const startVal = document.getElementById("startDateFilter").value;
+      const endVal = document.getElementById("endDateFilter").value;
+      const statusVal = document.getElementById("statusFilter").value;
+      const gatewayVal = document.getElementById("gatewayFilter").value;
+      const countryVal = document.getElementById("countryFilter").value;
+
+      const startDate = startVal ? new Date(startVal + 'T00:00:00') : null;
+      const endDate = endVal ? new Date(endVal + 'T23:59:59') : null;
+
+      const filtered = rawData.filter(r => {
+        let orderDate = parseOrderDate(r["Order Date"]);
+        let matchDate = true;
+        if (orderDate) {
+          if (startDate && orderDate < startDate) matchDate = false;
+          if (endDate && orderDate > endDate) matchDate = false;
+        }
+
+        const matchStatus = (statusVal === "ALL") || ((r["Status"] || "").trim() === statusVal);
+        const matchGateway = (gatewayVal === "ALL") || ((r["Payment Method"] || "").trim() === gatewayVal);
+        const matchCountry = (countryVal === "ALL") || ((r["SHIP CN"] || "").trim() === countryVal);
+
+        return matchDate && matchStatus && matchGateway && matchCountry;
+      });
+
+      processData(filtered);
+    }
+
+    function resetFilters() {
+      document.getElementById("startDateFilter").value = "";
+      document.getElementById("endDateFilter").value = "";
+      document.getElementById("statusFilter").value = "ALL";
+      document.getElementById("gatewayFilter").value = "ALL";
+      document.getElementById("countryFilter").value = "ALL";
+      applyFilters();
+    }
+
+    function processData(data) {
+      let gross = 0, net = 0, cogs = 0, discounts = 0, cancelledCount = 0;
+      let gatewayMap = {}, countryMap = {};
+      let tbodyHtml = "";
+
+      data.forEach(row => {
+        let orderNum = row["Order #"] || row["Order # "] || "";
+        let rowGross = cleanNum(row["Item Price (Gross)"]);
+        let rowNet = cleanNum(row["Item Price (Net)"]);
+        let rowCogs = cleanNum(row["Buying Cost (Total)"]);
+        let rowDiscount = cleanNum(row["Discount Amount"]);
+        let status = (row["Status"] || "COMPLETED").trim();
+        let gateway = (row["Payment Method"] || "Unspecified").trim();
+        let country = (row["SHIP CN"] || "N/A").trim();
+
+        gross += rowGross;
+        net += rowNet;
+        cogs += rowCogs;
+        discounts += rowDiscount;
+
+        if (status.toUpperCase().includes("CANCELLED")) cancelledCount++;
+
+        gatewayMap[gateway] = (gatewayMap[gateway] || 0) + rowNet;
+        countryMap[country] = (countryMap[country] || 0) + rowNet;
+
+        let badgeClass = "badge-completed";
+        if (status.toUpperCase().includes("CANCELLED")) badgeClass = "badge-cancelled";
+        else if (status.toUpperCase().includes("DISCOUNT")) badgeClass = "badge-discount";
+
+        tbodyHtml += `<tr>
+          <td><strong style="color: #FFFFFF;">${orderNum}</strong></td>
+          <td>${row["Order Date"] || ''}</td>
+          <td>${gateway}</td>
+          <td>${country}</td>
+          <td><span class="badge ${badgeClass}">${status}</span></td>
+          <td>€${rowCogs.toFixed(2)}</td>
+          <td style="color: #6EE7B7; font-weight: 600;">€${rowNet.toFixed(2)}</td>
+        </tr>`;
+      });
+
+      document.getElementById("grossSales").innerText = "€" + gross.toLocaleString('en-US', {minimumFractionDigits: 2});
+      document.getElementById("netRevenue").innerText = "€" + net.toLocaleString('en-US', {minimumFractionDigits: 2});
+      document.getElementById("totalCogs").innerText = "€" + cogs.toLocaleString('en-US', {minimumFractionDigits: 2});
+      document.getElementById("grossProfit").innerText = "€" + (net - cogs).toLocaleString('en-US', {minimumFractionDigits: 2});
+      document.getElementById("discounts").innerText = "€" + discounts.toLocaleString('en-US', {minimumFractionDigits: 2});
+      document.getElementById("cancelled").innerText = cancelledCount;
+
+      document.querySelector("#ledgerTable tbody").innerHTML = tbodyHtml;
+
+      renderCharts(gatewayMap, countryMap);
+    }
+
+    function renderCharts(gatewayMap, countryMap) {
+      if (gatewayChartInstance) gatewayChartInstance.destroy();
+      if (countryChartInstance) countryChartInstance.destroy();
+
+      const ctx1 = document.getElementById('gatewayChart').getContext('2d');
+      gatewayChartInstance = new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(gatewayMap),
+          datasets: [{
+            data: Object.values(gatewayMap),
+            backgroundColor: ['#3B82F6', '#38BDF8', '#F59E0B', '#10B981', '#6366F1'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { labels: { color: '#9CA3AF' } }
+          }
+        }
+      });
+
+      const ctx2 = document.getElementById('countryChart').getContext('2d');
+      countryChartInstance = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(countryMap),
+          datasets: [{
+            label: 'Net Sales (€)',
+            data: Object.values(countryMap),
+            backgroundColor: '#3B82F6',
+            borderRadius: 8
+          }]
+        },
+        options: {
+          scales: {
+            x: { ticks: { color: '#9CA3AF' }, grid: { color: '#1F2937' } },
+            y: { ticks: { color: '#9CA3AF' }, grid: { color: '#1F2937' } }
+          },
+          plugins: {
+            legend: { labels: { color: '#9CA3AF' } }
+          }
+        }
+      });
+    }
+
+    window.onload = loadDashboardData;
+  </script>
+</body>
+</html>
