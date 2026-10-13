@@ -14,12 +14,11 @@
 
   <style>
     :root {
-      --bg-color: #0F172A;        /* Slate Dark Blue (Soft on eyes) */
-      --card-bg: #1E293B;         /* Soft Dark Card */
-      --card-border: #334155;     /* Smooth Border */
+      --bg-color: #0F172A;
+      --card-bg: #1E293B;
+      --card-border: #334155;
       --blue-normal: #4488FC;
       --blue-dark: #2C5EB4;
-      --blue-light: #E8F0FF;
       --text-main: #F8FAFC;
       --text-muted: #94A3B8;
       --success: #10B981;
@@ -30,7 +29,6 @@
     * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 0; }
     body { background-color: var(--bg-color); color: var(--text-main); padding: 24px; }
     
-    /* Header Bar */
     .header {
       background: var(--card-bg);
       padding: 16px 28px;
@@ -40,7 +38,6 @@
       align-items: center;
       border: 1px solid var(--card-border);
       margin-bottom: 20px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
     .brand-box { display: flex; align-items: center; gap: 16px; }
     .brand-logo { height: 38px; object-fit: contain; }
@@ -55,12 +52,9 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 13px;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 12px rgba(68, 136, 252, 0.3);
     }
     .btn-sync:hover { background: var(--blue-dark); }
 
-    /* Filters Bar */
     .filter-panel {
       background: var(--card-bg);
       padding: 18px 24px;
@@ -72,8 +66,8 @@
       gap: 16px;
       align-items: center;
     }
-    .filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 150px; }
-    .filter-group label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 140px; }
+    .filter-group label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
     .filter-group select, .filter-group input {
       padding: 10px 12px;
       border: 1px solid var(--card-border);
@@ -83,7 +77,6 @@
       font-size: 13px;
       outline: none;
     }
-    .filter-group select:focus, .filter-group input:focus { border-color: var(--blue-normal); }
 
     .btn-reset {
       align-self: flex-end;
@@ -96,10 +89,8 @@
       font-size: 13px;
       font-weight: 600;
     }
-    .btn-reset:hover { background: #475569; }
 
-    /* KPI Cards Zone */
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 20px; }
     .card {
       background: var(--card-bg);
       padding: 18px;
@@ -114,8 +105,7 @@
     .card h3 { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; font-weight: 700; }
     .card p { font-size: 20px; font-weight: 700; color: #FFFFFF; }
 
-    /* Charts Section */
-    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-bottom: 20px; }
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-bottom: 20px; }
     .chart-card {
       background: var(--card-bg);
       padding: 20px;
@@ -124,7 +114,6 @@
     }
     .chart-card h2 { font-size: 14px; margin-bottom: 16px; color: #FFFFFF; font-weight: 700; }
 
-    /* Table Section */
     .table-card {
       background: var(--card-bg);
       padding: 20px;
@@ -137,15 +126,22 @@
     th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--card-border); }
     th { background: #334155; color: #67E8F9; font-weight: 600; text-transform: uppercase; font-size: 11px; }
     td { color: #CBD5E1; }
-    tr:hover { background-color: #334155; }
 
     .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; }
     .badge-cancelled { background: rgba(239, 68, 68, 0.2); color: #FCA5A5; }
     .badge-discount { background: rgba(68, 136, 252, 0.2); color: #93C5FD; }
     .badge-completed { background: rgba(16, 185, 129, 0.2); color: #6EE7B7; }
+
+    #loadingOverlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.85); display: flex; justify-content: center;
+      align-items: center; font-size: 18px; font-weight: 600; color: #38BDF8; z-index: 999;
+    }
   </style>
 </head>
 <body>
+
+  <div id="loadingOverlay">⏳ Syncing Google Sheet Data...</div>
 
   <!-- HEADER -->
   <div class="header">
@@ -158,6 +154,12 @@
 
   <!-- FILTERS -->
   <div class="filter-panel">
+    <div class="filter-group">
+      <label>Month Select</label>
+      <select id="monthSelectFilter" onchange="applyFilters()">
+        <option value="ALL">All Months</option>
+      </select>
+    </div>
     <div class="filter-group">
       <label>Start Date</label>
       <input type="date" id="startDateFilter" onchange="applyFilters()">
@@ -229,8 +231,7 @@
   </div>
 
   <script>
-    // Google Apps Script Deploy Web App URL
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzr52C5SI16Gmhx5FHbuM5DR1XBOiSsVqt8_NwxkSPpmnYvdq8sv9XgJHGUoimeLw-H/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtIHoNkSWbmlabErC2wP4ZnHp2hXFtQbrulDxux33LSnPSYulRUI7pGyokSCooY0w_/exec";
 
     let rawData = [];
     let gatewayChartInstance = null;
@@ -256,34 +257,47 @@
     }
 
     function loadDashboardData() {
+      document.getElementById("loadingOverlay").style.display = "flex";
+      
       fetch(APPS_SCRIPT_URL)
         .then(res => res.json())
         .then(json => {
+          document.getElementById("loadingOverlay").style.display = "none";
           if (json.data) {
             rawData = json.data;
             populateDropdowns(rawData);
             applyFilters();
           }
         })
-        .catch(err => console.error("Error fetching data:", err));
+        .catch(err => {
+          document.getElementById("loadingOverlay").innerText = "⚠️ Fetching Error: " + err;
+          console.error("Error fetching data:", err);
+        });
     }
 
     function populateDropdowns(data) {
-      const statuses = new Set(), gateways = new Set(), countries = new Set();
+      const statuses = new Set(), gateways = new Set(), countries = new Set(), months = new Set();
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
       data.forEach(r => {
         let st = (r["Status"] || "").toString().trim();
         let gw = (r["Payment Method"] || "").toString().trim();
         let cn = (r["SHIP CN"] || "").toString().trim();
+        let dt = parseOrderDate(r["Order Date"]);
 
         if (st) statuses.add(st);
         if (gw) gateways.add(gw);
         if (cn) countries.add(cn);
+        if (dt) {
+          let mKey = monthNames[dt.getMonth()] + " " + dt.getFullYear();
+          months.add(mKey);
+        }
       });
 
       fillSelect("statusFilter", Array.from(statuses).sort());
       fillSelect("gatewayFilter", Array.from(gateways).sort());
       fillSelect("countryFilter", Array.from(countries).sort());
+      fillSelect("monthSelectFilter", Array.from(months));
     }
 
     function fillSelect(id, valuesArray) {
@@ -297,6 +311,7 @@
     }
 
     function applyFilters() {
+      const monthVal = document.getElementById("monthSelectFilter").value;
       const startVal = document.getElementById("startDateFilter").value;
       const endVal = document.getElementById("endDateFilter").value;
       const statusVal = document.getElementById("statusFilter").value;
@@ -306,12 +321,19 @@
       const startDate = startVal ? new Date(startVal + 'T00:00:00') : null;
       const endDate = endVal ? new Date(endVal + 'T23:59:59') : null;
 
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
       const filtered = rawData.filter(r => {
         let orderDate = parseOrderDate(r["Order Date"]);
         let matchDate = true;
+
         if (orderDate) {
           if (startDate && orderDate < startDate) matchDate = false;
           if (endDate && orderDate > endDate) matchDate = false;
+          if (monthVal !== "ALL") {
+            let rowMKey = monthNames[orderDate.getMonth()] + " " + orderDate.getFullYear();
+            if (rowMKey !== monthVal) matchDate = false;
+          }
         }
 
         const matchStatus = (statusVal === "ALL") || ((r["Status"] || "").toString().trim() === statusVal);
@@ -325,6 +347,7 @@
     }
 
     function resetFilters() {
+      document.getElementById("monthSelectFilter").value = "ALL";
       document.getElementById("startDateFilter").value = "";
       document.getElementById("endDateFilter").value = "";
       document.getElementById("statusFilter").value = "ALL";
